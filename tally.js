@@ -97,5 +97,5 @@ var loadProjectsToMongo = function () {
     });
 };
 
-loadProjectsToMongo()
+loadProjectsToMongo();
 

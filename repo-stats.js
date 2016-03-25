@@ -3,6 +3,8 @@
  */
 var pmongo = require('promised-mongo');
 var _ = require('underscore');
+var await = require('asyncawait/await');
+var async = require('asyncawait/async');
 
 /**
  * Create a db connection to the given db name.
@@ -14,14 +16,15 @@ var getDbConnection = function () {
 
 var db = getDbConnection();
 
-db.collection('commits').aggregate( [ { $group: { _id: "$author.name", commitsByAuthor: { $sum: 1 } } } ],
-    function(curser) {
-        console.log('curser' , curser);
-        curser.toArray().forEach(function(value) {
-            printjson(value);
-        });
-    }
-);
+var updatProjectWithCommits = async (function() {
+    var resultA = await (db.collection('commits').aggregate({$group: {_id: '$author.name', commitsByAuthor: { $sum: 1 }}}));
+    var resultB = await (db.collection('projects').findAndModify({
+        query: { key: 'BRM' },
+        update: { $set: { commits: resultA} },
+        new: true
+    }));
+    //console.log('updateResult' , resultB);
+});
 
-console.log(something);
+updatProjectWithCommits();
 

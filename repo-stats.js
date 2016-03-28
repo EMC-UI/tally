@@ -17,6 +17,8 @@ var getDbConnection = function () {
 var db = getDbConnection();
 
 var getSummaries = async(function () {
+    var totalCount = await(db.collection('commits').count());
+
     var userSummaries = await(db.collection('commits').aggregate(
         {
             "$group": {
@@ -31,7 +33,7 @@ var getSummaries = async(function () {
         {
             "$group": {
                 "_id": "$_id.user",
-                "users": {
+                "projects": {
                     "$push": {
                         "project": "$_id.project",
                         "count": "$commitsByAuthorProject"
@@ -70,28 +72,28 @@ var getSummaries = async(function () {
     ));
 
     var summaries = {
+        totalCount: totalCount,
         userSummaries: userSummaries,
         projectSummaries: projectSummaries
     };
 
-    //console.log('\n user summaries \n');
-    //var total = 0;
-    //_.each(summaries.userSummaries, function(summary) {
-    //    console.log(summary._id, summary.count);
-    //    total += summary.count;
-    //    _.each(summary.projects, function(project) {
-    //        console.log(project);
-    //    });
-    //});
-    //
-    //console.log('\n project summaries \n');
-    //_.each(summaries.projectSummaries, function(summary) {
-    //    console.log(summary._id, summary.count);
-    //    total += summary.count;
-    //    _.each(summary.users, function(user) {
-    //        console.log(user);
-    //    });
-    //});
+    console.log('\n totalCount', totalCount);
+
+    console.log('\n user summaries \n');
+    _.each(summaries.userSummaries, function(summary) {
+        console.log(summary._id, summary.count);
+        _.each(summary.projects, function(project) {
+            console.log(project);
+        });
+    });
+
+    console.log('\n project summaries \n');
+    _.each(summaries.projectSummaries, function(summary) {
+        console.log(summary._id, summary.count);
+        _.each(summary.users, function(user) {
+            console.log(user);
+        });
+    });
 
     // sample output
     //user summaries

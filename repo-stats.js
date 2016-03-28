@@ -25,7 +25,7 @@ var sinceDays = function(inLastXDays) {
     return lastXDaysTime;
 };
 
-var userSummaries = function(since) {
+var userSummaries = async(function(since) {
     var lastXDaysTime = sinceDays(since);
     return await(db.collection('commits').aggregate(
         { '$match': { 'authorTimestamp': {$gte: lastXDaysTime} } },
@@ -53,9 +53,9 @@ var userSummaries = function(since) {
         },
         {"$sort": {"count": -1}}
     ));
-};
+});
 
-var projectSummaries = function(since) {
+var projectSummaries = async(function(since) {
     var lastXDaysTime = sinceDays(since);
     var results = await(db.collection('commits').aggregate(
         { '$match': { 'authorTimestamp': {$gte: lastXDaysTime} } },
@@ -84,7 +84,7 @@ var projectSummaries = function(since) {
         {"$sort": {"count": -1}}
     ));
     return results;
-};
+});
 
 var getSummaries = async(function (inLastXDays, userSummaries, projectSummaries) {
 

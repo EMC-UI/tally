@@ -5,6 +5,9 @@ var pmongo = require('promised-mongo');
 var _ = require('underscore');
 var await = require('asyncawait/await');
 var async = require('asyncawait/async');
+var moment = require('moment');
+
+var DEFAULT_LAST_X_DAYS = 7;
 
 /**
  * Create a db connection to the given db name.
@@ -16,10 +19,14 @@ var getDbConnection = function () {
 
 var db = getDbConnection();
 
-var getSummaries = async(function () {
-    var totalCount = await(db.collection('commits').count());
+var getSummaries = async(function (inLastXDays) {
+    var lastXDays = inLastXDays || DEFAULT_LAST_X_DAYS;
+    var lastXDaysTime = moment().subtract(lastXDays, 'd').valueOf();
+
+    var totalCount = await(db.collection('commits').find({ 'authorTimestamp': {'$gte': lastXDaysTime}}).count());
 
     var userSummaries = await(db.collection('commits').aggregate(
+        { '$match': { 'authorTimestamp': {$gte: lastXDaysTime} } },
         {
             "$group": {
                 "_id": {
@@ -46,6 +53,7 @@ var getSummaries = async(function () {
     ));
 
     var projectSummaries = await(db.collection('commits').aggregate(
+        { '$match': { 'authorTimestamp': {$gte: lastXDaysTime} } },
         {
             "$group": {
                 "_id": {
@@ -77,7 +85,7 @@ var getSummaries = async(function () {
         projectSummaries: projectSummaries
     };
 
-    //console.log('\n totalCount', totalCount);
+    //console.log('\n\n****** lastXDays =', lastXDays,  'totalCount =', totalCount);
     //
     //console.log('\n user summaries \n');
     //_.each(summaries.userSummaries, function(summary) {
@@ -95,61 +103,51 @@ var getSummaries = async(function () {
     //    });
     //});
 
-    // sample output
-    //
-    //totalCount 33
-    //
-    //user summaries
-    //
-    //Brian Reynolds count= 12
-    //{ project: 'SKUI', count: 12 }
-    //dehru count= 5
-    //{ project: 'SKUI', count: 3 }
-    //{ project: 'CUC', count: 2 }
-    //Jase count= 5
-    //{ project: 'SKUI', count: 5 }
-    //klaird count= 5
-    //{ project: 'SKUI', count: 5 }
-    //mturner count= 3
-    //{ project: 'SKUI', count: 3 }
-    //Kris Thompson count= 2
-    //{ project: 'SKUI', count: 2 }
-    //sjolat2 count= 1
-    //{ project: 'SKUI', count: 1 }
-    //
-    //project summaries
-    //
-    //SKUI count= 31
-    //{ user: 'Brian Reynolds', count: 12 }
-    //{ user: 'Jase', count: 5 }
-    //{ user: 'klaird', count: 5 }
-    //{ user: 'dehru', count: 3 }
-    //{ user: 'mturner', count: 3 }
-    //{ user: 'Kris Thompson', count: 2 }
-    //{ user: 'sjolat2', count: 1 }
-    //CUC count= 2
-    //{ user: 'dehru', count: 2 }
-
     return summaries;
 });
 
-//var updateProjectWithCommits = async(function () {
-    //var userSummary = await(db.collection('commits').aggregate({
-    //    $group: {
-    //        _id: '$author.name',
-    //        commitsByAuthor: {$sum: 1}
-    //    }
-    //}));
-    //console.log('userSummary', userSummary);
-    //
-    //var projectSummary = await(db.collection('commits').aggregate({
-    //    $group: {
-    //        _id: '$project.key',
-    //        commitsByProject: {$sum: 1}
-    //    }
-    //}));
-    //console.log('\n\nprojectSummary\n', projectSummary);
-//});
+var getMultipleSummaries = async(function (multiLastXDays) {
+    var results = [];
+    _.each(multiLastXDays, function(lastXDays) {
+        results.push(await(getSummaries(lastXDays)));
+    });
+    console.log(results);
+    return results;
+});
 
+getMultipleSummaries([7,14]);
 
-getSummaries();
+// sample output
+//
+// lastXDays = 14 totalCount = 141
+//
+//user summaries
+//
+//Brian Reynolds count= 12
+//{ project: 'SKUI', count: 12 }
+//dehru count= 5
+//{ project: 'SKUI', count: 3 }
+//{ project: 'CUC', count: 2 }
+//Jase count= 5
+//{ project: 'SKUI', count: 5 }
+//klaird count= 5
+//{ project: 'SKUI', count: 5 }
+//mturner count= 3
+//{ project: 'SKUI', count: 3 }
+//Kris Thompson count= 2
+//{ project: 'SKUI', count: 2 }
+//sjolat2 count= 1
+//{ project: 'SKUI', count: 1 }
+//
+//project summaries
+//
+//SKUI count= 31
+//{ user: 'Brian Reynolds', count: 12 }
+//{ user: 'Jase', count: 5 }
+//{ user: 'klaird', count: 5 }
+//{ user: 'dehru', count: 3 }
+//{ user: 'mturner', count: 3 }
+//{ user: 'Kris Thompson', count: 2 }
+//{ user: 'sjolat2', count: 1 }
+//CUC count= 2
+//{ user: 'dehru', count: 2 }

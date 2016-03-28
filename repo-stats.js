@@ -77,38 +77,49 @@ var getSummaries = async(function () {
         projectSummaries: projectSummaries
     };
 
-    console.log('\n totalCount', totalCount);
-
-    console.log('\n user summaries \n');
-    _.each(summaries.userSummaries, function(summary) {
-        console.log(summary._id, summary.count);
-        _.each(summary.projects, function(project) {
-            console.log(project);
-        });
-    });
-
-    console.log('\n project summaries \n');
-    _.each(summaries.projectSummaries, function(summary) {
-        console.log(summary._id, summary.count);
-        _.each(summary.users, function(user) {
-            console.log(user);
-        });
-    });
+    //console.log('\n totalCount', totalCount);
+    //
+    //console.log('\n user summaries \n');
+    //_.each(summaries.userSummaries, function(summary) {
+    //    console.log(summary._id, 'count=', summary.count);
+    //    _.each(summary.projects, function(project) {
+    //        console.log(project);
+    //    });
+    //});
+    //
+    //console.log('\n project summaries \n');
+    //_.each(summaries.projectSummaries, function(summary) {
+    //    console.log(summary._id, 'count=', summary.count);
+    //    _.each(summary.users, function(user) {
+    //        console.log(user);
+    //    });
+    //});
 
     // sample output
+    //
+    //totalCount 33
+    //
     //user summaries
     //
-    //Brian Reynolds 12
-    //dehru 5
-    //Jase 5
-    //klaird 5
-    //mturner 3
-    //Kris Thompson 2
-    //sjolat2 1
+    //Brian Reynolds count= 12
+    //{ project: 'SKUI', count: 12 }
+    //dehru count= 5
+    //{ project: 'SKUI', count: 3 }
+    //{ project: 'CUC', count: 2 }
+    //Jase count= 5
+    //{ project: 'SKUI', count: 5 }
+    //klaird count= 5
+    //{ project: 'SKUI', count: 5 }
+    //mturner count= 3
+    //{ project: 'SKUI', count: 3 }
+    //Kris Thompson count= 2
+    //{ project: 'SKUI', count: 2 }
+    //sjolat2 count= 1
+    //{ project: 'SKUI', count: 1 }
     //
     //project summaries
     //
-    //SKUI 31
+    //SKUI count= 31
     //{ user: 'Brian Reynolds', count: 12 }
     //{ user: 'Jase', count: 5 }
     //{ user: 'klaird', count: 5 }
@@ -116,7 +127,7 @@ var getSummaries = async(function () {
     //{ user: 'mturner', count: 3 }
     //{ user: 'Kris Thompson', count: 2 }
     //{ user: 'sjolat2', count: 1 }
-    //CUC 2
+    //CUC count= 2
     //{ user: 'dehru', count: 2 }
 
     return summaries;

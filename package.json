@@ -5,7 +5,8 @@
     "promised-mongo": "^1.2.0",
     "superagent": "^1.8.1",
     "underscore": "*",
-    "asyncawait": "^1.0.3"
+    "asyncawait": "^1.0.3",
+    "moment": ">=2.8.0"
   },
   "devDependencies": {}
 }

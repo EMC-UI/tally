@@ -19,13 +19,15 @@ var getDbConnection = function () {
 
 var db = getDbConnection();
 
-var getSummaries = async(function (inLastXDays) {
+var sinceDays = function(inLastXDays) {
     var lastXDays = inLastXDays || DEFAULT_LAST_X_DAYS;
     var lastXDaysTime = moment().subtract(lastXDays, 'd').valueOf();
+    return lastXDaysTime;
+};
 
-    var totalCount = await(db.collection('commits').find({ 'authorTimestamp': {'$gte': lastXDaysTime}}).count());
-
-    var userSummaries = await(db.collection('commits').aggregate(
+var userSummaries = function(since) {
+    var lastXDaysTime = sinceDays(since);
+    return await(db.collection('commits').aggregate(
         { '$match': { 'authorTimestamp': {$gte: lastXDaysTime} } },
         {
             "$group": {
@@ -51,8 +53,11 @@ var getSummaries = async(function (inLastXDays) {
         },
         {"$sort": {"count": -1}}
     ));
+};
 
-    var projectSummaries = await(db.collection('commits').aggregate(
+var projectSummaries = function(since) {
+    var lastXDaysTime = sinceDays(since);
+    var results = await(db.collection('commits').aggregate(
         { '$match': { 'authorTimestamp': {$gte: lastXDaysTime} } },
         {
             "$group": {
@@ -78,6 +83,18 @@ var getSummaries = async(function (inLastXDays) {
         },
         {"$sort": {"count": -1}}
     ));
+    return results;
+};
+
+var getSummaries = async(function (inLastXDays, userSummaries, projectSummaries) {
+
+    var lastXDaysTime = sinceDays(inLastXDays || DEFAULT_LAST_X_DAYS);
+
+    var totalCount = await(db.collection('commits').find({ 'authorTimestamp': {'$gte': lastXDaysTime}}).count());
+
+    var userSummaries = userSummaries(lastXDaysTime);
+
+    var projectSummaries =  projectSummaries(lastXDaysTime);
 
     var summaries = {
         totalCount: totalCount,
@@ -109,13 +126,22 @@ var getSummaries = async(function (inLastXDays) {
 var getMultipleSummaries = async(function (multiLastXDays) {
     var results = [];
     _.each(multiLastXDays, function(lastXDays) {
-        results.push(await(getSummaries(lastXDays)));
+        results.push(await(getSummaries(lastXDays, userSummaries, projectSummaries)));
     });
     console.log(results);
     return results;
 });
 
 getMultipleSummaries([7,14]);
+
+module.exports = {
+    getSummaries: function() {
+        return getMultipleSummaries([7,14]);
+    },
+    getProjectStats: function() {
+        return projectSummaries();
+    }
+};
 
 // sample output
 //

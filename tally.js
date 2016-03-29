@@ -13,8 +13,6 @@ var projectsUrl = baseUrl + '/projects';
 var reposUrl = '/repos';
 var commitsUrl = '/commits';
 
-var DEFAULT_LAST_X_DAYS = 7;
-
 var PROJECTS_REPOS = {
     CSC: [
         'emc-mongo-store',
@@ -40,28 +38,28 @@ var PROJECTS_REPOS = {
     SKUI: 'ALL'
 };
 
-/**
- * Create a db connection to the given db name.
- * @returns {*|exports}
- */
+var DEFAULT_SINCE_DAYS = 7;
+
+var since;
+var sinceTime = function (sinceDays) {
+    sinceDays = sinceDays || DEFAULT_SINCE_DAYS;
+    return moment().subtract(sinceDays, 'd').valueOf();
+};
+
 var getDbConnection = function () {
     return pmongo('mongodb://localhost:27017/tally');
 };
-
 var db = getDbConnection();
 
-var lastXDays = DEFAULT_LAST_X_DAYS;
-
-var createData = async (function(inLastXDays) {
-    lastXDays = inLastXDays || DEFAULT_LAST_X_DAYS;
+var createData = async(function (sinceDays) {
+    since = sinceTime(sinceDays);
 
     var dropDbs = [
         db.collection('commits').drop(),
         db.collection('repos').drop(),
         db.collection('projects').drop()
     ];
-    await (dropDbs);
-
+    await(dropDbs);
     loadProjectsToMongo();
 });
 
@@ -70,14 +68,13 @@ var loadCommitsForRepo = function (repo) {
         throw new Error('repo is not an object: ', repo);
         return;
     }
-    var sevenDays = moment().subtract(lastXDays, 'd');
 
     var repoCommitsUrl = baseUrl + repo.project.link.url + '/repos/' + repo.slug + commitsUrl + '?limit=100&withCounts=true';
-    console.log('repoCommitsUrl IS: ', repoCommitsUrl);
+    //console.log('repoCommitsUrl IS: ', repoCommitsUrl);
 
     request.get(repoCommitsUrl, function (err, res) {
         if (err) {
-            console.log('error no commits for: ', repoCommitsUrl);
+            //console.log('error no commits for: ', repoCommitsUrl);
             return;
         }
 
@@ -92,19 +89,20 @@ var loadCommitsForRepo = function (repo) {
         //  totalCount: 8792
         //console.log('response.counts limit=', response.limit, 'totalCount=', response.totalCount);
 
-        var matchComments = _.filter(response.values, function(commit) {
-            return commit.authorTimestamp >= sevenDays && commit.parents.length===1;
+        var matchComments = _.filter(response.values, function (commit) {
+            return commit.authorTimestamp >= since && commit.parents.length === 1;
         });
-        console.log('find matchComments', matchComments.length);
-
-        matchComments.forEach(function (commit) {
-            commit.project = repo.project;
-            commit.repo = repo.slug;
-            db.collection('commits').insert(commit).then(function (message) {
-            }).catch(function (err) {
-                console.log('commits error: ', err);
+        //console.log('find matchComments', matchComments.length);
+        if (matchComments.length > 0) {
+            matchComments.forEach(function (commit) {
+                commit.project = repo.project;
+                commit.repo = repo.slug;
+                db.collection('commits').insert(commit).then(function (message) {
+                }).catch(function (err) {
+                    console.log('commits error: ', err);
+                });
             });
-        });
+        }
     });
 };
 
@@ -114,7 +112,7 @@ var loadReposForProject = function (project) {
         return;
     }
     var projectRepoUrl = baseUrl + project.link.url + reposUrl;
-    console.log('projectRepoUrl IS: ', projectRepoUrl);
+    //console.log('projectRepoUrl IS: ', projectRepoUrl);
 
     request.get(projectRepoUrl, function (err, res) {
         if (err) {
@@ -124,7 +122,7 @@ var loadReposForProject = function (project) {
         var response = JSON.parse(res.text);
         var repos = response.values;
 
-        repos.forEach(function(repo) {
+        repos.forEach(function (repo) {
             if (PROJECTS_REPOS[project.key] === 'ALL' ||
                 _.contains(PROJECTS_REPOS[project.key], repo.name)) {
                 console.log('repo.name=', repo.name);
@@ -136,6 +134,7 @@ var loadReposForProject = function (project) {
                 });
             }
         });
+
     });
 };
 
@@ -159,10 +158,11 @@ var loadProjectsToMongo = function () {
                 });
             }
         });
+
     });
 };
 
-
-createData(14);
-
+module.exports = {
+    createData: createData
+};
 

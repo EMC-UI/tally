@@ -1,2 +1,3 @@
 # tally
-A little app that queries stash and pushed stats to mongo
+=============
+This project pulls git stats from stash and puts it into mongo

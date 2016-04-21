@@ -36,31 +36,67 @@ var projectStats = function (sinceDays) {
             '$match': {'authorTimestamp': {$gte: since}}
         },
         {
-            "$group": {
-                "_id": {
-                    "project": "$project.key",
-                    "user": "$author.name"
+            '$group': {
+                '_id': {
+                    'project': '$project.key',
+                    'user': '$author.name'
                 },
-                "commitsByProjectAuthor": {"$sum": 1}
+                'commitsByProjectAuthor': {'$sum': 1}
             }
         },
         {
-            "$sort": {"commitsByProjectAuthor": -1}
+            '$sort': {'commitsByProjectAuthor': -1}
         },
         {
-            "$group": {
-                "_id": "$_id.project",
-                "users": {
-                    "$push": {
-                        "user": "$_id.user",
-                        "count": "$commitsByProjectAuthor"
+            '$group': {
+                '_id': '$_id.project',
+                'users': {
+                    '$push': {
+                        'user': '$_id.user',
+                        'count': '$commitsByProjectAuthor'
                     }
                 },
-                "count": {"$sum": "$commitsByProjectAuthor"}
+                'count': {'$sum': '$commitsByProjectAuthor'}
             }
         },
         {
-            "$sort": {"count": -1}
+            '$sort': {'count': -1}
+        }
+    );
+};
+
+var repoStats = function (sinceDays) {
+    var since = sinceTime(sinceDays);
+    return db.collection('commits').aggregate(
+        {
+            '$match': {'authorTimestamp': {$gte: since}}
+        },
+        {
+            '$group': {
+                '_id': {
+                    'repo': '$repo',
+                    'user': '$author.name'
+                },
+                'commitsByRepoAuthor': {'$sum': 1}
+            }
+        },
+        {
+            '$sort': {'commitsByRepoAuthor': -1}
+        },
+        {
+            '$group': {
+                '_id': '$_id.repo',
+                'users': {
+                    '$push': {
+                        'user': '$_id.user',
+                        'count': '$commitsByRepoAuthor'
+                    }
+                },
+                'count': {'$sum': '$commitsByRepoAuthor'}
+            }
+        },
+        {
+            '$sort': {'count': -1}
         }
     );
 };
@@ -72,31 +108,31 @@ var userStats = function (sinceDays) {
             '$match': {'authorTimestamp': {$gte: since}}
         },
         {
-            "$group": {
-                "_id": {
-                    "user": "$author.name",
-                    "project": "$project.key"
+            '$group': {
+                '_id': {
+                    'user': '$author.name',
+                    'project': '$project.key'
                 },
-                "commitsByAuthorProject": {"$sum": 1}
+                'commitsByAuthorProject': {'$sum': 1}
             }
         },
         {
-            "$sort": {"commitsByAuthorProject": -1}
+            '$sort': {'commitsByAuthorProject': -1}
         },
         {
-            "$group": {
-                "_id": "$_id.user",
-                "projects": {
-                    "$push": {
-                        "project": "$_id.project",
-                        "count": "$commitsByAuthorProject"
+            '$group': {
+                '_id': '$_id.user',
+                'projects': {
+                    '$push': {
+                        'project': '$_id.project',
+                        'count': '$commitsByAuthorProject'
                     }
                 },
-                "count": {"$sum": "$commitsByAuthorProject"}
+                'count': {'$sum': '$commitsByAuthorProject'}
             }
         },
         {
-            "$sort": {"count": -1}
+            '$sort': {'count': -1}
         }
     );
 };
@@ -121,14 +157,27 @@ var getProjectStats = async(function (sinceDays) {
     };
 });
 
+
+var getRepoStats = async(function (sinceDays) {
+    var total = await(totalCount(sinceDays));
+    var stats = await(repoStats(sinceDays));
+    return {
+        since: sinceDays,
+        totalCount: total,
+        stats: stats
+    };
+});
+
 var getStats = async(function (sinceDays) {
     var total = await(totalCount(sinceDays));
     var projects = await(projectStats(sinceDays));
+    var repos = await(repoStats(sinceDays));
     var users = await(userStats(sinceDays));
     var stats = {
         since: sinceDays,
         totalCount: total,
         projectStats: projects,
+        repoStats: repos,
         userStats: users
     };
     return stats;
@@ -145,6 +194,7 @@ var getStatsMultiDays = async(function (sinceDaysMulti) {
 module.exports = {
     getUserStats: getUserStats,
     getProjectStats: getProjectStats,
+    getRepoStats: getRepoStats,
     getStats: getStats,
     getStatsMultiDays: getStatsMultiDays
 };

@@ -64,12 +64,12 @@ var createData = async(function (sinceDays) {
 });
 
 var loadCommitsForRepo = function (repo) {
-    if (!repo || !repo.project || !repo.project.link) {
+    if (!repo || !repo.project || !repo.project.links) {
         throw new Error('repo is not an object: ', repo);
         return;
     }
 
-    var repoCommitsUrl = baseUrl + repo.project.link.url + '/repos/' + repo.slug + commitsUrl + '?limit=100&withCounts=true';
+    var repoCommitsUrl = projectsUrl + '/' + repo.project.key + '/repos/' + repo.slug + commitsUrl + '?limit=100&withCounts=true';
     //console.log('repoCommitsUrl IS: ', repoCommitsUrl);
 
     request.get(repoCommitsUrl, function (err, res) {
@@ -107,16 +107,17 @@ var loadCommitsForRepo = function (repo) {
 };
 
 var loadReposForProject = function (project) {
-    if (!project || !project.link) {
+
+    if (!project || !project.links) {
         console.log('error project is not an object: ', project);
         return;
     }
-    var projectRepoUrl = baseUrl + project.link.url + reposUrl;
+    var projectRepoUrl = baseUrl + '/projects/' + project.key + reposUrl;
     //console.log('projectRepoUrl IS: ', projectRepoUrl);
 
     request.get(projectRepoUrl, function (err, res) {
         if (err) {
-            console.log('Error repo', projectRepoUrl);
+            console.log('Error repo', projectRepoUrl, err);
         }
 
         var response = JSON.parse(res.text);
@@ -125,7 +126,7 @@ var loadReposForProject = function (project) {
         repos.forEach(function (repo) {
             if (PROJECTS_REPOS[project.key] === 'ALL' ||
                 _.contains(PROJECTS_REPOS[project.key], repo.name)) {
-                console.log('repo.name=', repo.name);
+                //console.log('repo.name=', repo.name);
                 db.collection('repos').insert(repo).then(function (repo) {
                     //console.log('find repos', repos.length);
                     loadCommitsForRepo(repo)
@@ -139,7 +140,7 @@ var loadReposForProject = function (project) {
 };
 
 var loadProjectsToMongo = function () {
-    console.log('projectsUrl is: ', projectsUrl);
+    //console.log('projectsUrl is: ', projectsUrl);
 
     request.get(projectsUrl, function (err, res) {
         if (err) {
@@ -150,7 +151,7 @@ var loadProjectsToMongo = function () {
 
         projects.forEach(function (project) {
             if (PROJECTS_REPOS[project.key] !== undefined) {
-                console.log('project.key=', project.key);
+                //console.log('project.key=', project.key);
                 db.collection('projects').insert(project).then(function (project) {
                     loadReposForProject(project);
                 }).catch(function (err) {

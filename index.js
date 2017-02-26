@@ -69,7 +69,38 @@ module.exports = {
     },
 
     /**
-     * Get user and project stats.
+     * Get repo stats.
+     * @param sinceDays e.g. 7 means since 7 days ago
+     * @return e.g.
+     * {
+     *      since: 14,
+     *      totalCount: 147,
+     *      stats: [
+     *          {
+     *              _id: 'skyline-ui-settings',
+     *              users: [
+     *                  { user: 'dehru', count: 44 },
+     *                  { user: 'Brian Reynolds', count: 15 }
+     *              ],
+     *              count: 132
+     *          },
+     *          {
+     *              _id: 'skyline-ui-assets',
+     *              users: [
+     *                  { user: 'dehru', count: 10 },
+     *                  { user: 'klaird', count: 1 }
+     *              ],
+     *              count: 11
+     *          }
+     *      ]
+     * }
+     */
+    repoStats: function(sinceDays) {
+        return stats.getRepoStats(sinceDays);
+    },
+
+    /**
+     * Get user, project and repo stats.
      * @param sinceDays e.g. 7 means since 7 days ago
      * @result e.g.
      * {
@@ -78,6 +109,10 @@ module.exports = {
      *      projectStats: [
      *          { _id: 'SKUI', users: [Object], count: 132 },
      *          { _id: 'CUC', users: [Object], count: 11 }
+     *      ],
+     *      repoStats: [
+     *          { _id: 'skyline-ui-settings', users: [Object], count: 132 },
+     *          { _id: 'skyline-ui-assets', users: [Object], count: 11 }
      *      ],
      *      userStats: [
      *          { _id: 'dehru', projects: [Object], count: 58 },
@@ -90,7 +125,7 @@ module.exports = {
     },
 
     /**
-     * Get user and project stats with an array of days.
+     * Get user, project and repo stats with an array of days.
      * @param sinceDaysMulti e.g. [7,14] for last 7 or 14 days
      */
     statsMultiDays: function(sinceDaysMulti) {

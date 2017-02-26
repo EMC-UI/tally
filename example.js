@@ -17,6 +17,12 @@ var testProjectStats = function(sinceDays) {
     });
 };
 
+var testRepoStats = function(sinceDays) {
+    tally.repoStats(sinceDays).then(function(result) {
+        console.log('\n\n****** testRepoStats', result);
+    });
+};
+
 var testStats = function(sinceDays) {
     tally.stats(sinceDays).then(function(result) {
         console.log('\n\n****** testStats', result);
@@ -46,7 +52,8 @@ var testCreateData = function(sinceDays) {
 var tests = function(sinceDays) {
     testUserStats(sinceDays);
     testProjectStats(sinceDays);
+    testRepoStats(sinceDays);
     testStats(sinceDays);
 };
 
-tests(14);
+tests(7);
